@@ -5,6 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = __importDefault(require("axios"));
 const jsdom_1 = require("jsdom");
+const tough_cookie_1 = require("tough-cookie");
+const axios_cookiejar_support_1 = __importDefault(require("axios-cookiejar-support"));
+axios_cookiejar_support_1.default(axios_1.default);
+const cookieJar = new tough_cookie_1.CookieJar();
 const url = 'https://www.jimmyjazz.com/collections/mens-basketball-shoes/products/jordan-westbrook-one-take-cj0780-103';
 const getProducts = async (uri) => {
     const doc = await jsdom_1.JSDOM.fromURL(uri);
@@ -35,12 +39,18 @@ const addToCart = async (variantId, size = '') => {
         utf8: '%E2%9C%93',
         Size: size,
         id: variantId
+    }, {
+        jar: cookieJar,
+        withCredentials: true
     });
     return response.status;
 };
 const getCart = async () => {
     const endpoint = 'https://www.jimmyjazz.com/cart.js';
-    const response = await axios_1.default.get(endpoint);
+    const response = await axios_1.default.get(endpoint, {
+        jar: cookieJar,
+        withCredentials: true
+    });
     // TODO: generate interface for response 
     return response.data.item_count;
 };
