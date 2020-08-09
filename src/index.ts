@@ -1,7 +1,7 @@
 import Axios from 'axios';
+import axiosCookieJarSupport from 'axios-cookiejar-support';
 import { JSDOM } from 'jsdom';
 import { CookieJar } from 'tough-cookie';
-import axiosCookieJarSupport from 'axios-cookiejar-support';
 import { IProductInfo } from './data/ProductInfo';
 
 axiosCookieJarSupport(Axios); // adds support for cookieJar
@@ -70,25 +70,58 @@ const getCart = async (): Promise<number> => {
 };
 
 const checkout = async (): Promise<number> => {
-    const endpoint = 'https://www.jimmyjazz.com/checkout.json';
+    const checkoutEndpoint = 'https://www.jimmyjazz.com/checkout.json';
 
-    const response = await Axios.post(endpoint, null,
-    {
+    const checkoutResponse = await Axios.get(checkoutEndpoint, {
         httpAgent: userAgent,
         jar: cookieJar,
         withCredentials: true
     });
 
-    console.log(response.headers);
+    // TODO: clean up 🤡
+    const redirectUrl: string = checkoutResponse.headers['set-cookie'][1];
+    const redirectStrings = redirectUrl.split(';');
 
-    return response.status;
+    const locationEndpoint = `https://www.jimmyjazz.com${redirectStrings[1].split('=')[1].trim()}`;
+    console.log(locationEndpoint);
+
+    // not used yet
+    const data = {
+        'checkout[email]': 'test@gmail.com',
+        'checkout[shipping_address][first_name]': 'Test',
+        'checkout[shipping_address][last_name]': 'Test',
+        'checkout[shipping_address][address1]': '7000 TEST STREET',
+        'checkout[shipping_address][city]': 'CITY',
+        'checkout[shipping_address][country]': 'US',
+        'checkout[shipping_address][province]': 'STATE',
+        'checkout[shipping_address][zip]': 1,
+        'checkout[shipping_address][phone]': 1,
+        _method: 'patch'
+    };
+
+    const locationResponse = await Axios.post(locationEndpoint, 
+    {
+        _method: 'patch'
+    }, 
+    {
+        httpAgent: userAgent,
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        },
+        jar: cookieJar,
+        withCredentials: true
+    });
+
+    return locationResponse.status;
 };
 
 // Main function (IIFE)
 (async () => {
     const products = await getProducts(url);
     
-    console.log(`Status Code: ${await addToCart(products[0].variantId, products[0].size)}`);
+    if (await addToCart(products[0].variantId, products[0].size) === 200)
+        console.log('Successfully added ' + products[0].size);
+
     console.log(`Items in Cart: ${await getCart()}`);
     await checkout();
 })();
