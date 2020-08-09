@@ -7,9 +7,10 @@ const axios_1 = __importDefault(require("axios"));
 const jsdom_1 = require("jsdom");
 const tough_cookie_1 = require("tough-cookie");
 const axios_cookiejar_support_1 = __importDefault(require("axios-cookiejar-support"));
-axios_cookiejar_support_1.default(axios_1.default);
+axios_cookiejar_support_1.default(axios_1.default); // adds support for cookieJar
 const cookieJar = new tough_cookie_1.CookieJar();
-const url = 'https://www.jimmyjazz.com/collections/mens-basketball-shoes/products/jordan-westbrook-one-take-cj0780-103';
+const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36';
+const url = 'https://www.jimmyjazz.com/collections/go-for-gold-by-nike/products/nike-shox-r4-104265-702';
 const getProducts = async (uri) => {
     const doc = await jsdom_1.JSDOM.fromURL(uri);
     const products = [];
@@ -40,6 +41,7 @@ const addToCart = async (variantId, size = '') => {
         Size: size,
         id: variantId
     }, {
+        httpAgent: userAgent,
         jar: cookieJar,
         withCredentials: true
     });
@@ -48,14 +50,27 @@ const addToCart = async (variantId, size = '') => {
 const getCart = async () => {
     const endpoint = 'https://www.jimmyjazz.com/cart.js';
     const response = await axios_1.default.get(endpoint, {
+        httpAgent: userAgent,
         jar: cookieJar,
         withCredentials: true
     });
     // TODO: generate interface for response 
     return response.data.item_count;
 };
+const checkout = async () => {
+    const endpoint = 'https://www.jimmyjazz.com/checkout.json';
+    const response = await axios_1.default.post(endpoint, null, {
+        httpAgent: userAgent,
+        jar: cookieJar,
+        withCredentials: true
+    });
+    console.log(response.headers);
+    return response.status;
+};
+// Main function (IIFE)
 (async () => {
     const products = await getProducts(url);
-    console.log(`Status Code: ${await addToCart(products[0].variantId, products[1].size)}`);
+    console.log(`Status Code: ${await addToCart(products[0].variantId, products[0].size)}`);
     console.log(`Items in Cart: ${await getCart()}`);
+    await checkout();
 })();
