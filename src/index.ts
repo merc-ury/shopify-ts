@@ -3,6 +3,7 @@ import axiosCookieJarSupport from 'axios-cookiejar-support';
 import { JSDOM } from 'jsdom';
 import { CookieJar } from 'tough-cookie';
 import { IProductInfo } from './data/ProductInfo';
+import qs from 'qs';
 
 axiosCookieJarSupport(Axios); // adds support for cookieJar
 
@@ -85,34 +86,41 @@ const checkout = async (): Promise<number> => {
     const locationEndpoint = `https://www.jimmyjazz.com${redirectStrings[1].split('=')[1].trim()}`;
     console.log(locationEndpoint);
 
-    // not used yet
-    const data = {
-        'checkout[email]': 'test@gmail.com',
-        'checkout[shipping_address][first_name]': 'Test',
-        'checkout[shipping_address][last_name]': 'Test',
-        'checkout[shipping_address][address1]': '7000 TEST STREET',
-        'checkout[shipping_address][city]': 'CITY',
-        'checkout[shipping_address][country]': 'US',
-        'checkout[shipping_address][province]': 'STATE',
-        'checkout[shipping_address][zip]': 1,
-        'checkout[shipping_address][phone]': 1,
-        _method: 'patch'
-    };
 
-    const locationResponse = await Axios.post(locationEndpoint, 
-    {
-        _method: 'patch'
-    }, 
-    {
-        httpAgent: userAgent,
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        },
-        jar: cookieJar,
-        withCredentials: true
-    });
+    // create the x-www-form-urlencoded data to POST
+    const data = qs.stringify({
+        '_method': 'patch',
+        'checkout[email]': 'rivaye8784@mail2paste.com',
+        'checkout[shipping_address][first_name]': '["","TestFirst"]',
+        'checkout[shipping_address][last_name]': '["","TestLast"]',
+        'checkout[shipping_address][address1]': '["","7006+Pauline+Circle"]',
+        'checkout[shipping_address][city]': '["","Chattanooga"]',
+        'checkout[shipping_address][country]': '["","United+States"]',
+        'checkout[shipping_address][province]': '["","TN"]',
+        'checkout[shipping_address][zip]': '["","37421"]',
+        'checkout[shipping_address][phone]': '["","(423)+829-0495"]'
+	})
 
-    return locationResponse.status;
+    // console.log("the x-www-form-urlencoded data: " + data);
+
+    var statusFromPost = -1;
+    const locationResponse = await Axios.post(locationEndpoint, data,
+        {
+            httpAgent: userAgent,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded' },
+                       jar: cookieJar,
+            withCredentials: true,
+        }).then(function (response) {
+            console.log("does it go here");
+            console.log("response status: " + response.status);
+            // console.log(response); // this will overflow your terminal page.
+            statusFromPost = response.status;
+        });
+
+
+    console.log("logging status from post: " + statusFromPost)
+    return statusFromPost;
 };
 
 // Main function (IIFE)
